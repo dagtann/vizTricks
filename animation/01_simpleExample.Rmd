@@ -1,0 +1,94 @@
+---
+title: "A Simple Animation Example"
+author: "dagtann"
+date: "October 18, 2015"
+output: html_document
+theme: default
+highlight: zenburn
+---
+
+With the help of the animation package it becomes simple to
+create animated graphs in R. Each such graph consists of a
+sequence of plots that are converted into the requested
+output format. This example generates a simple animated gif
+file.
+```{r}
+## --- Preamble --------------------------------------------
+rm(list = ls())                               ## start clean
+library('animation')
+```
+
+Let's generate some data for plotting. It is necessary to
+decide on the number of frames first. To keep things
+simple this example generates only $10$ frames.
+
+```{r}
+# --- 1) Generate some plotting data -----------------------
+set.seed(8734)                       ## ensure replicability
+noFrames <- 10             ## how many frames wanted in ani?
+dta <- data.frame(                          ## data for plot
+  x = 1:noFrames, y = runif(noFrames)
+)
+head(dta)
+```
+
+Now for the tricky part. This example uses  __saveGIF()__
+from the animation package. This as any other convenience
+function from the animation package opens a graphical
+device, then generates a sequence of plots, and
+finally saves the result in the requested format.[^1] The
+sequence of plots should be based on an expression that is
+reapplied to each outputted frame. It is best
+to write a function for that purpose. The function below
+takes our rexample data, creates an empty plot and finally
+loops over each row to plot it.
+
+```{r}
+frames <- function(data, domain, range, maxFrames) {
+  ## data ... the data frame to plot
+  ## index ... domain of the function
+  ## value ... range of the function
+  ## maxFrames ... how many frames are there?
+  plot(            ## generate an empty plot with fixed dims
+    x = 0, y = 0, xlim = c(1, maxFrames), ylim = c(0, 1),
+    type ='n', xlab = 'Domain', ylab = 'Range'
+  )
+  for(i in 1:nrow(data)) {
+    lines(
+      x = c(data[i-1, domain], data[i, domain]), 
+      y = c(data[i-1, range], data[i, range])
+    )
+    points(
+      x = data[i, domain], y = data[i, range],
+      pch = 16, col = 'black'
+    )
+  }
+}
+```
+
+If executed by itself the function merely returns the last
+plot. In order to get the entire sequence it must be wrapped
+into the __saveGif()__ function. By default the graph is
+saved into your current working directory.
+
+```{r, results = 'hide'}
+saveGIF(
+  lapply(1:noFrames, ## listwise apply FUN to elements 1:noFrames
+    FUN = function(k) {     ## anonymous function to lapply
+    frames(                 ## plotting function from above
+      data = dta[1:k, ], domain = 'x', range = 'y',
+      maxFrames = noFrames
+    ) 
+  }
+  ),
+  movie.name = 'simpleAnimation.gif',
+  interval = .3                          ## animation speed
+)
+```
+
+Here is the result:
+
+ ![](/Users/dag/github/vizTricks/animation/simpleAnimation.gif)
+ 
+ [^1]: Note that __saveGIF()__ requires ImageMagick to be
+  installed on your system.
