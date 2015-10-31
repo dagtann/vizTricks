@@ -1,0 +1,86 @@
+---
+title: "Create custom line types"
+author: "Dag Tanneberg"
+date: "31 October 2015"
+output: html_document
+---
+
+## Introduction
+
+Line types are one very efficient way to map discrete
+variables to the aesthetics of a plot. However, you
+may quickly run out of alternatives if those variables have
+more than a handful of possible values. Fortunately,
+Hadley Wickham's ggplot2 supports custom line types, and the
+default line types shown below merely represent quick
+settings from a more complex set of alternatives.
+
+```{r}
+dta <- data.frame(
+  line.type = c(
+    "blank", "solid", "dashed", "dotted", "dotdash", 
+    "longdash", "twodash"
+  )
+)
+
+library('ggplot2')
+ggplot(data = dta) +
+  geom_segment(
+    aes(
+      x = 0, xend = 1, y = line.type, yend = line.type,
+      linetype=line.type
+    )
+  ) +
+  scale_y_discrete(name="linetype") +
+  scale_linetype_identity() +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x = element_blank(),
+    panel.grid = element_blank()
+  )
+```
+
+## Define a custom line type
+
+To define your own line type you must provide a string
+of length 2, 4, 6, or 8. The longer that string the more 
+complex patterns become possible. Each element of the
+vector tells ggplot2 about the width of fills and blanks in
+a new line type. The pattern is FILL BLANK FILL BLANK
+FILL BLANK FILL BLANK. Valid values range from 1 to 9 with
+higher numbers indicating more width. The example below
+plots all possible line types of length 2.
+
+```{r,fig.height=12}
+dta <- expand.grid(1:9, 1:9)
+dta[, 'line.type'] <- paste0(dta[, 1], dta[, 2])
+head(dta)
+
+ggplot(data = dta) +
+  geom_segment(
+    aes(
+      x = 0, xend = 1, y = line.type, yend = line.type,
+      linetype=line.type
+    )
+  ) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_linetype_identity() +
+  labs(y = 'Line type') +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x = element_blank(),
+    panel.grid = element_blank()
+  )
+```
+
+## Note
+
+Another introduction to custom line types is available from 
+[Sape](http://sape.inf.usi.ch/quick-reference/ggplot2/linetype).
+This resource mentions that ggplot2's line.type parameter
+is equivalent to the base plot parameter lty. In other words,
+you can do the same thing in base R.
