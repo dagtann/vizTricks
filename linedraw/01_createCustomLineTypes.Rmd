@@ -51,14 +51,15 @@ vector tells ggplot2 about the width of fills and blanks in
 a new line type. The pattern is FILL BLANK FILL BLANK
 FILL BLANK FILL BLANK. Valid values range from 1 to 9 with
 higher numbers indicating more width. The example below
-plots all possible line types of length 2.
+plots 7 random line types of length 2.
 
 ```{r,fig.height=12}
 dta <- expand.grid(1:9, 1:9)
 dta[, 'line.type'] <- paste0(dta[, 1], dta[, 2])
 head(dta)
 
-ggplot(data = dta) +
+set.seed(15889)
+ggplot(data = dta[sample(1:nrow(dta), 7), ]) +
   geom_segment(
     aes(
       x = 0, xend = 1, y = line.type, yend = line.type,
