@@ -1,0 +1,29 @@
+---
+title: "A Slope Chart Example"
+author: "dagtann"
+date: "October 18, 2015"
+output: html_document
+theme: default
+highlight: zenburn
+---
+
+```{r}
+set.seed(1)
+dta <- expand.grid(
+  id = rep(letters[1:10]),
+  t = c(1:2)
+)
+dta[, 'value'] <- runif(n = nrow(dta))
+head(dta)
+
+library('ggplot2')
+ggplot(
+  data = dta, aes(x = factor(t), y = value)
+) +
+  geom_line(aes(group = id), size = 1.2) +
+  labs(x = 'Time', y = 'Measurement') +
+  theme(
+    text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank()
+  )
