@@ -30,3 +30,5 @@
 *.nav
 *.sublime-project
 *.sublime-workspace
+.Rproj.user
+*.dta

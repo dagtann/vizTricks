@@ -1,6 +1,17 @@
+---
+title: "Multiplicative Interaction Terms with continuous Predictors"
+author: dagtann
+data: "November 20, 2015"
+output: html_document
+---
+
+
+[Government duration data](http://www.press.umich.edu/resources/govduration.dta)
+
+```{r}
 rm(list = ls())
 library('foreign')
-dta <- read.dta(file = '/Users/dag/Desktop/govduration.dta')
+dta <- read.dta(file = './govduration.dta')
 str(dta)
 summary(dta)
 
@@ -32,3 +43,4 @@ ggplot(data = pred.dta,
 ) +
   geom_tile(colour = 'black') +
   theme_minimal()
+```
