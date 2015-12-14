@@ -1,16 +1,49 @@
 ---
-title: "Multiplicative Interaction Terms with continuous Predictors"
-author: dagtann
+title: "Changing the graphical presentation of multiplicative
+interaction effects: Improving the communication of
+empirical social research"
+author: "Dag Tanneberg"
 data: "November 20, 2015"
-output: html_document
+output: 
+  pdf_document:
+    fig_width: 7
+    fig_height: 5
 ---
 
+# General considerations
 
+Consider the standard linear model with a single
+multiplicative interaction term. Let $x$ denote the
+predictor of substantive interest and let $z$ be the
+moderator. The fully specified regression fully 
+$$
+  y = f(x,z, \epsilon)
+  y = \beta_0 + \beta_1 x + \beta_2 z + \beta_3 xz + \epsilon
+$$
+
+| $\beta_1$ | $\beta_2$ | $\beta_3$ | Joint Effect |
+| --- | --- | --- | --- |
+| > 0 | > 0 | > 0 | Mutual augmentation
+| < 0 | > 0 | > 0 | $\beta_1$ attenuated, $\beta_2$ augmented
+| > 0 | < 0 | > 0 | $\beta_1$ augmented, $\beta_2$ attenuated
+| > 0 | > 0 | < 0 | Mutual attenuation
+| < 0 | > 0 | < 0 | $\beta_1$ augmented, $\beta_2$ attenuated
+| > 0 | < 0 | < 0 | $\beta_1$ attenuated, $\beta_2$ augmented
+| < 0 | < 0 | < 0 | Mutual augmentation
+| < 0 | < 0 | > 0 | Mutual attenuation
+
+Assuming $x, z \ge 0$.
+
+# Toy data setup
+
+Original: Kam & Franzese, Multiplicative Interaction Terms
+Download:
 [Government duration data](http://www.press.umich.edu/resources/govduration.dta)
 
-```{r, fig.align='center'}
+```{r, echo=FALSE}
 # load data ------------------------------------------------
 rm(list = ls())
+library('ggplot2')
 dta <- data.frame(
   id = c(
     2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
@@ -37,7 +70,17 @@ dta <- data.frame(
   )
 )
 head(dta)
+# Dependent variable: govdur = government duration
+# Independent variables:
+#  PS = Political strength
+#  NP = Number of Parties
+#  PD = ???
+```
+\newpage
 
+# Fit model & generate predicted values
+
+```{r}
 # fit model & generate predictions ------------------------
 fit <- lm(govdur ~ NP*PS + PD, data = dta)
 summary(fit)
@@ -46,7 +89,7 @@ quantiles <- c(.05, .25, .5, .75, .95)
 pred.dta <- expand.grid(
   # expand.grid covers all quantile combinations
   NP = quantile(dta[, 'NP'], quantiles),
-  PS = quantile(dta[, 'PS'], quantiles),
+  PS = dta[, 'PS'],
   PD = mean(dta[, 'PD'])
 )
 pred.y <- predict(
@@ -57,28 +100,122 @@ pdta <- data.frame(
   pred.dta, pred.y[['fit']], se.fit = pred.y[['se.fit']]
 )
 rm(quantiles, pred.y)
+pdta <- within(pdta,
+  NP.cat <- factor(NP, levels = sort(unique(NP)),
+    labels = c(
+      'Q[5] == 1', 'Q[25] == 1.175', 'Q[50] == 1.8',
+      'Q[75] == 2.575', 'Q[95] == 3.775'
+    )
+  )
+)
+```
+\newpage
 
+\section{Presentation using Predicted Values}
+
+An equally powerful presentation of interaction effects
+focuses on the relationship between the response and
+the focal predictor Such effect displays plot the predicted
+values of the response against the focal predictor, while
+fixing the moderator at select values. In effect, the
+marginal effect on the focal predictor is replaced with the
+expected level of the dependent variable itself, and the
+conditional relationship can be interpreted in the metric of
+the depedent variable itself. Using these graphs makes it
+fairly easy to translate formal statistical models into the
+substantive quantities that led to the formulation of the
+conditional hypothesis in the first place.
+
+This variant of effect displays becomes a particularly
+effective means for communicating statistical results if at
+least the the focal predictor is a continuous variable. In
+the past many scholars resorted to either discretization or
+focused on 
+
+
+```{r, fig.align='center'}
+ggplot(pdta, aes(x = PS, y = fit)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = .6) +
+  geom_line() +
+  geom_rug(sides = 'b') +
+  labs(
+    x = 'Political Strength', y = 'Fitted Political Stability'
+  ) +
+  facet_grid(~NP.cat, labeller = label_parsed) +
+  theme_minimal(base_size = 12, base_family = 'serif') +
+  theme(panel.border = element_rect(size = .3, colour = 'grey65', fill = 'transparent'))
+ggplot(pdta, aes(x = NP, y = fit)) +
+  geom_pointrange(aes(ymin = lwr, ymax = upr)) +
+  facet_grid(~PS)
+```
+
+# Version 2: Simple slopes approach
+
+The conditional marginal effect of the focal predictor is
+plotted against the moderator. This plots emphasizes
+areas of statistical significance.
+
+```{r}
+beta <- coef(fit)
+omega <- beta['PS'] + beta['NP:PS'] * dta[, 'NP']
+se.fit <- sqrt(
+  diag(vcov(fit))['PS'] + 
+  2 * dta[, 'NP'] * vcov(fit)['PS', 'NP:PS'] + 
+  (dta[, 'NP']^2) * diag(vcov(fit))['NP:PS']
+)
+
+upr <- omega + 1.96 * se.fit
+lwr <- omega - 1.96 * se.fit
+pdta.bauer <- data.frame(
+  omega = omega,
+  upr = upr,
+  lwr = lwr,
+  se.fit = se.fit,
+  NP = dta[, 'NP']
+)
+pdta.bauer <- within(pdta.bauer, {
+  signif <- ifelse(lwr < 0 & upr > 0, 1, 0)
+  signif <- factor(signif, 0:1, c('Yes', 'No'))
+  }
+)
+rm(beta, omega, se.fit, upr, lwr)
+ggplot(
+  data = pdta.bauer, 
+  aes(x = NP, y = omega, ymin = lwr, ymax = upr, colour = signif)
+) +
+  geom_pointrange()
+```
+
+# Version 3: Chloropleth map
+
+This map plots both independent variables against each other.
+The expected value of the response is used to as fill color.
+This plots ignores uncertainty.
+
+```{r}
 # simple map ----------------------------------------------
-library('ggplot2')
 ggplot(data = pdta,
   aes(
     x = factor(format(NP, digits = 2)),
     y = factor(format(PS, digits = 3)),
-    fill = fit
+    fill = fit #, alpha = 1/se.fit
   )
 ) +
-  geom_tile(colour = 'white', size = .8) +
-  scale_fill_gradient(
-    low = '#7f0000', high = '#fff7ec', limits = c(0, 40),
-    breaks = seq(0, 40, 10)
-  ) +
-  labs(x = 'Number of Cabinet Parties', y = 'Political Strength', 
+  geom_tile(colour = 'white', size = .3) +
+  scale_fill_gradient(low = '#2166ac', high = '#b2182b') +
+  labs(
+    x = 'Number of Cabinet Parties',
+    y = 'Political Strength',
     fill = 'Fitted Government Duration'
   ) +
   theme_minimal() +
   theme(
     text = element_text(family = 'serif'),
-    legend.position = 'top', legend.direction = 'horizontal',
-    panel.grid = element_blank(), plot.background = element_blank()
+    legend.key.height = grid::unit(.5, 'lines'),
+    legend.position = 'top',
+    legend.direction = 'horizontal',
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    plot.background = element_blank()
   )
 ```

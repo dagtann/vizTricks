@@ -1,0 +1,25 @@
+```{r}
+rm(list = ls())
+library('plm')
+data(EmplUK)
+summary(EmplUK)
+
+EmplUK.agg <- aggregate(
+  output ~ firm, data = EmplUK,
+  FUN = function(x){
+    p50 <- median(x); iqr <- IQR(x)
+    cbind(p50, iqr)
+  }
+)
+EmplUK.agg[, 'p50'] <- EmplUK.agg[, 2][, 1]
+EmplUK.agg[, 'iqr'] <- EmplUK.agg[, 2][, 2]
+EmplUK.agg <- reshape2::melt(EmplUK.agg,
+  id.vars = 'firm', measure.vars = c('p50', 'iqr')
+)
+str(EmplUK.agg)
+
+library('ggplot2')
+ggplot(data = EmplUK.agg, aes(x = value, y = factor(0))) +
+  geom_point() +
+  facet_grid(variable~.)
+```
