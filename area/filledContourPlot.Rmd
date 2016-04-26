@@ -1,0 +1,16 @@
+x<-seq(1,11,.001)                           # note finer grid
+y<-seq(1,11,.001)
+xyz.func<-function(x,y) {-10.4+6.53*x+6.53*y-0.167*x^2-0.167*y^2+0.0500*x*y}
+gg <- expand.grid(x=x,y=y)
+gg$z <- with(gg,xyz.func(x,y))      # need long format for ggplot
+library(ggplot2)
+library(RColorBrewer)               #for brewer.pal()
+brks <- cut(gg$z,breaks=seq(0,100,len=6))
+brks <- gsub(","," - ",brks,fixed=TRUE)
+gg$brks <- gsub("\\(|\\]","",brks)  # reformat guide labels
+ggplot(gg,aes(x,y)) +
+  geom_raster(aes(fill=brks))+
+  scale_fill_manual("Z",values=brewer.pal(6,"YlOrRd"))+
+  scale_x_continuous(expand=c(0,0))+
+  scale_y_continuous(expand=c(0,0))+
+  coord_fixed()

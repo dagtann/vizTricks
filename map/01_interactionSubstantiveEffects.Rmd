@@ -89,7 +89,7 @@ quantiles <- c(.05, .25, .5, .75, .95)
 pred.dta <- expand.grid(
   # expand.grid covers all quantile combinations
   NP = quantile(dta[, 'NP'], quantiles),
-  PS = dta[, 'PS'],
+  PS = quantile(dta[, 'PS'], quantiles),
   PD = mean(dta[, 'PD'])
 )
 pred.y <- predict(

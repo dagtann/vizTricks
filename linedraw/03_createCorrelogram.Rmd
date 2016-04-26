@@ -1,0 +1,33 @@
+
+```{r}
+pca <- princomp(cor(get(data("mtcars"))), cor = TRUE)
+order.vars <- names(loadings(pca)[, 1])[order(loadings(pca)[, 1])]
+
+dta <- cor(get(data("mtcars")))
+dta <- dta[order.vars, order.vars]
+dta[lower.tri(dta)] <- NA
+dta <- data.frame(dta); dta[, 'col.var'] <- rownames(dta)
+dta <- reshape2::melt(dta, id.vars = 'col.var', measure.vars = order.vars)
+dta <- subset(dta, !is.na(value))
+dta <- within(dta, {
+  col.var <- factor(col.var, levels = order.vars)
+  row.var <- factor(variable, levels = order.vars)
+  sign <- factor(ifelse(value >= 0, 1, 0), 0:1, c('-', '+'))
+  }
+)
+
+library('ggplot2')
+p <- ggplot(data = dta, aes(x = col.var, y = row.var, colour = abs(value), shape = sign))
+p + geom_point(size = 12) + 
+  labs(
+    title = 'Correlogramm of mtcars\nSorted by loading on 1st principle component'
+  ) +
+  scale_shape_manual(values = c(15, 19)) +
+  scale_colour_gradient(limits = c(0, 1), breaks = seq(0, 1, .5),
+    low = '#fff5f0', high = '#67000d'
+  ) +
+  ggthemes::theme_fivethirtyeight(base_family="Arial Narrow") +
+  theme(
+    legend.box = 'horizontal'
+  )
+```
